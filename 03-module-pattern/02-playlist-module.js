@@ -138,6 +138,44 @@ const PlaylistModule = (function () {
 			return { ok: true, data: mezcla };
 		},
 
+		duracionTotal(nombrePlaylist) {
+			const playlist = biblioteca.get(nombrePlaylist);
+			if (!playlist) {
+				return {
+					ok: false,
+					meta: {
+						mensaje: `La playlist ${nombrePlaylist} no existe`,
+					},
+				};
+			}
+
+			const duracion = playlist.canciones.reduce((total, cancion) => total + cancion.duracion, 0);
+			return { of: true, data: duracion };
+		},
+
+		buscarPorArtista(nombreArtista) {
+			const resultado = [];
+			if (biblioteca.size === 0) {
+				return {
+					ok: true,
+					data: [],
+				};
+			}
+
+			for (const playlist of biblioteca.values()) {
+				for (const cancion of playlist.canciones) {
+					if (cancion.artista === nombreArtista) {
+						resultado.push({
+							...cancion,
+							playlist: playlist.nombre,
+						});
+					}
+				}
+			}
+
+			return { ok: true, data: resultado };
+		},
+
 		verBiblioteca() {
 			return {
 				data: Array.from(biblioteca.values()),
@@ -191,7 +229,22 @@ PlaylistModule.agregarCancion(resAgregar.data.nombre, {
 	artista: "Airbag",
 	duracion: 482,
 });
+PlaylistModule.agregarCancion(resAgregar.data.nombre, {
+	titulo: "Extrañas Intenciones",
+	artista: "Airbag",
+	duracion: 482,
+});
+PlaylistModule.agregarCancion(resAgregar.data.nombre, {
+	titulo: "Cae el sol",
+	artista: "Airbag",
+	duracion: 482,
+});
 
 console.log(PlaylistModule.reproducir("Rock Clásico").data);
 
 console.log(PlaylistModule.mezclar("Rock Clásico"));
+
+const duracionPlaylist = PlaylistModule.duracionTotal("Rock Clásico");
+console.log(duracionPlaylist.data);
+
+console.log(PlaylistModule.buscarPorArtista("Airbag").data);
