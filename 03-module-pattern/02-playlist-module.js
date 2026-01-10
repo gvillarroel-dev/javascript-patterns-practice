@@ -186,65 +186,100 @@ const PlaylistModule = (function () {
 
 // =========================== ZONA DE TESTING ===========================
 
-const resAgregar = PlaylistModule.agregar("Rock Clásico");
-console.log(resAgregar);
+// agregar playlist válida
+console.log("\n----- Test: agregar playlist válida -----");
+const resAgregar = PlaylistModule.agregar("Rock");
+console.log(resAgregar.ok === true ? "Playlist agregada" : "No agregada");
 
-console.log(PlaylistModule.verBiblioteca().data);
+// agregar playlist duplicada
+console.log("\n----- Test: agregar playlist duplicada -----");
+const resDuplicada = PlaylistModule.agregar("Rock");
+console.log(resDuplicada.meta.mensaje);
 
-const resAgregarC = PlaylistModule.agregarCancion(resAgregar.data.nombre, {
-	titulo: "Stairway to Heaven",
-	artista: "Led Zeppelin",
-	duracion: 482,
-});
-console.log(resAgregarC.data);
+// agregar canciones
+const cancion1 = {
+    titulo: "Verte de Cerca",
+    artista: "Airbag",
+    duracion: 181
+}
 
-const agregarMismaCancion = PlaylistModule.agregarCancion(
-	resAgregar.data.nombre,
-	{
-		titulo: "Stairway to Heaven",
-		artista: "Led Zeppelin",
-		duracion: 482,
-	}
-);
-console.log(agregarMismaCancion.meta.mensaje);
+const cancion2 = {
+    titulo: "Extrañas Intenciones",
+    artista: "Airbag",
+    duracion: 148
+}
 
-console.log(PlaylistModule.eliminarCancion("Muse", "Airbag").meta.mensaje);
-console.log(
-	PlaylistModule.eliminarCancion("Rock Clásico", "Airbag").meta.mensaje
-);
-console.log(
-	PlaylistModule.eliminarCancion("Rock Clásico", "Stairway to Heaven")
-);
+const cancion3 = {
+	titulo: "The Pretender",
+	artista: "Foo Fighters",
+	duracion: 270,
+};
 
-console.log(PlaylistModule.verBiblioteca().data);
+// agregar cancion válida
+console.log("\n----- Test: agregar canción válida -----");
+const resAgregarCancion = PlaylistModule.agregarCancion("Rock", cancion1);
+console.log(resAgregarCancion.ok === true ? "Canción agregada" : "No agregada");
 
-console.log(PlaylistModule.reproducir("Rock Clásico").meta.mensaje);
-PlaylistModule.agregarCancion(resAgregar.data.nombre, {
-	titulo: "Stairway to Heaven",
-	artista: "Led Zeppelin",
-	duracion: 482,
-});
-PlaylistModule.agregarCancion(resAgregar.data.nombre, {
-	titulo: "Verte de Cerca",
-	artista: "Airbag",
-	duracion: 482,
-});
-PlaylistModule.agregarCancion(resAgregar.data.nombre, {
-	titulo: "Extrañas Intenciones",
-	artista: "Airbag",
-	duracion: 482,
-});
-PlaylistModule.agregarCancion(resAgregar.data.nombre, {
-	titulo: "Cae el sol",
-	artista: "Airbag",
-	duracion: 482,
-});
+PlaylistModule.agregarCancion("Rock", cancion2);
+PlaylistModule.agregarCancion("Rock", cancion3);
 
-console.log(PlaylistModule.reproducir("Rock Clásico").data);
+// agregar canción duplicada
+console.log("\n----- Test: agregar canción duplicada -----");
+const resCancionDuplicada = PlaylistModule.agregarCancion("Rock", cancion1);
+console.log(resCancionDuplicada.ok === false);
+console.log(resCancionDuplicada.meta.mensaje);
 
-console.log(PlaylistModule.mezclar("Rock Clásico"));
+// agregar canción a playlist inexistente
+console.log("\n----- Test: agregar canción a playlist inválida -----");
+const resPlaylistInexistente = PlaylistModule.agregarCancion("Pop", cancion3);
+console.log(resPlaylistInexistente.meta.mensaje);
 
-const duracionPlaylist = PlaylistModule.duracionTotal("Rock Clásico");
-console.log(duracionPlaylist.data);
+// eliminar canciones
+console.log("\n----- Test: eliminar canción válida -----");
+const resEliminar = PlaylistModule.eliminarCancion("Rock", "Extrañas Intenciones");
+console.log(resEliminar.ok === true);
+console.log(PlaylistModule.verBiblioteca());
 
-console.log(PlaylistModule.buscarPorArtista("Airbag").data);
+// eliminar canción inválida
+console.log("\n----- Test: eliminar canción inválida -----");
+const resEliminarInvalida = PlaylistModule.eliminarCancion("Rock", "Nothing Else Matters");
+console.log(resEliminarInvalida.ok === false);
+console.log(resEliminarInvalida.meta.mensaje);
+
+// reproducir playlist sin canciones
+console.log("\n----- Test: reproducir playlist sin canciones -----");
+PlaylistModule.agregar("J-Pop");
+const resReproducirVacia = PlaylistModule.reproducir("J-Pop");
+console.log(resReproducirVacia.meta.mensaje);
+
+// reproducir playlist válida
+console.log("\n----- Test: reproducir playlist válida -----");
+const resReproducir = PlaylistModule.reproducir("Rock");
+console.log(Array.isArray(resReproducir.data));
+
+// mezclar playlist 
+console.log("\n----- Test: mezclar canciones en playlist válida -----");
+PlaylistModule.agregarCancion("Rock", cancion2)
+const resMezclar = PlaylistModule.mezclar("Rock");
+console.log(resMezclar.data);
+
+// mezclar playlist inexistente
+console.log("\n----- Test: mezclar canciones en playlist inválida -----");
+const resMezclarInvalida = PlaylistModule.mezclar("Electronica");
+console.log(resMezclarInvalida.ok == false);
+console.log(resMezclarInvalida.meta.mensaje);
+
+// buscar por artista
+console.log("\n----- Test: buscar artista válido -----");
+const resBuscar = PlaylistModule.buscarPorArtista("Foo Fighters");
+console.log(resBuscar.data);
+
+// buscar artista inexistente
+console.log("\n----- Test: buscar artista inválido -----");
+const resBuscarInvalido = PlaylistModule.buscarPorArtista("The Beatles");
+console.log(resBuscarInvalido.data.length === 0);
+
+// ver biblioteca completa
+console.log("\n----- Test: ver biblioteca -----");
+const biblioteca = PlaylistModule.verBiblioteca();
+console.log(biblioteca.data);
