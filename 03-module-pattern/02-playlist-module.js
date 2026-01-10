@@ -132,7 +132,7 @@ const PlaylistModule = (function () {
 
 			const mezcla = [...playlist.canciones];
 			for (let i = playlist.canciones.length - 1; i > 0; i--) {
-				j = Math.floor(Math.random() * (i + 1));
+				const j = Math.floor(Math.random() * (i + 1));
 				[mezcla[i], mezcla[j]] = [mezcla[j], mezcla[i]];
 			}
 			return { ok: true, data: mezcla };
@@ -150,7 +150,7 @@ const PlaylistModule = (function () {
 			}
 
 			const duracion = playlist.canciones.reduce((total, cancion) => total + cancion.duracion, 0);
-			return { of: true, data: duracion };
+			return { ok: true, data: duracion };
 		},
 
 		buscarPorArtista(nombreArtista) {
@@ -178,6 +178,7 @@ const PlaylistModule = (function () {
 
 		verBiblioteca() {
 			return {
+				ok: true,
 				data: Array.from(biblioteca.values()),
 			};
 		},
