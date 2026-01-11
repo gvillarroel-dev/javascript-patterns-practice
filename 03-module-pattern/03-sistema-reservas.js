@@ -225,6 +225,86 @@ const SistemaReservas = (function () {
 			}
 		}
 
+		function modificar(numeroHabitacion, idReserva, nuevosDatos){
+			if(!Number.isInteger(numeroHabitacion) || !Number.isInteger(idReserva)) {
+				return {
+					ok: false,
+					meta: { mensaje: "Entrada inválida" }
+				};
+			}
+
+			if(!habitacionesApi.existe(numeroHabitacion)) {
+				return {
+					ok: false,
+					meta: { mensaje: "Habitación no encontrada" }
+				};
+			}
+
+			const reservas = obtenerReservas(numeroHabitacion);
+
+			const index = reservas.findIndex((reserva) => reserva.id === idReserva);
+			if(index === -1) {
+				return {
+					ok: false,
+					meta: { mensaje: "Reserva no encontrada" }
+				};
+			}
+
+			const reservaActual = reservas[index];
+
+			const ahora = Date.now();
+			const limite = reservaActual.fechaInicio.getTime() - 24 * 60 * 60 * 1000;
+			if(ahora >= limite) {
+				return {
+					ok: false,
+					meta: { mensaje: "Límite de modificación excedido (24 horas). No se pudo modificar" }
+				};
+			}
+
+			const clienteFinal = nuevosDatos.cliente ?? reservaActual.cliente;
+			const fechaInicioFinal = nuevosDatos.fechaInicio ?? reservaActual.fechaInicio;
+			const fechaFinFinal = nuevosDatos.fechaFin ?? reservaActual.fechaFin;
+
+			if(typeof clienteFinal !== "string" || clienteFinal.trim() === "" || !esFechaValida(fechaInicioFinal) || !esFechaValida(fechaFinFinal)) {
+				return {
+					ok: false,
+					meta: { mensaje: "Datos inválidos" }
+				};
+			}
+
+			if (fechaInicioFinal >= fechaFinFinal) {
+				return {
+					ok: false,
+					meta: { mensaje: "Rango de fechas inválido" },
+				};
+			}
+
+			for(const reserva of reservas) {
+				if(reserva.id === idReserva) continue;
+				
+				const haySolapamiento = fechaInicioFinal < reserva.fechaFin && fechaFinFinal > reserva.fechaInicio;
+				if(haySolapamiento) {
+					return {
+						ok: false,
+						meta: { mensaje: "Fecha ya reservada" }
+					};
+				}
+			}
+			
+			reservas[index] = {
+				...reservaActual,
+				cliente: clienteFinal,
+				fechaInicio: fechaInicioFinal,
+				fechaFin: fechaFinFinal,
+			};
+			reservasPorHabitacion.set(numeroHabitacion, reservas);
+			
+			return {
+				ok: true,
+				data: { idReserva }
+			};
+		}
+
 		function listarReservasPorHabitacion(numeroHabitacion) {
 			if(!Number.isInteger(numeroHabitacion)) {
 				return {
@@ -249,6 +329,7 @@ const SistemaReservas = (function () {
 		return {
 			crear,
 			cancelar,
+			modificar,
 			listarReservasPorHabitacion,
 			hayDisponibilidad,
 		};
@@ -333,6 +414,23 @@ const reserva4 = SistemaReservas.reservas.crear(
 
 const resCancelar = SistemaReservas.reservas.cancelar(reserva4.data.numeroHabitacion, reserva4.data.idReserva)
 console.log(resCancelar.ok === true);
+
+console.log("---------- modificar reserva válida ----------");
+
+const reserva5 = SistemaReservas.reservas.crear(
+	101,
+	"Jude",
+	new Date("2026-01-13"),
+	new Date("2026-01-20")
+);
+
+console.log(SistemaReservas.reservas.listarReservasPorHabitacion(reserva1.data.numeroHabitacion).data);
+
+const nuevosDatosReserva = {
+	fechaInicio: new Date("2026-01-14")
+}
+const resMod = SistemaReservas.reservas.modificar(reserva5.data.numeroHabitacion, reserva5.data.idReserva, nuevosDatosReserva);
+console.log(resMod.ok === true);
 
 console.log("---------- ver lista de reservas de una habitación válida ----------");
 console.log(SistemaReservas.reservas.listarReservasPorHabitacion(reserva1.data.numeroHabitacion).data);
