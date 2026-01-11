@@ -1,6 +1,6 @@
 const SistemaReservas = (function () {
 
-	// ============ Submódulo: Habitaciones 
+	// ============ Submódulo: Habitaciones ============
 	const habitaciones = (function () {
 		const habitacionesRegistradas = new Map();
 
@@ -73,6 +73,8 @@ const SistemaReservas = (function () {
 		};
 	})();
 
+
+	// ============ Submódulo: Reservas ============
 	const reservas = (function (habitacionesApi) {
 		const reservasPorHabitacion = new Map(); // numeroHabitacion -> [{id, cliente, fechaInicio, fechaFin}]
 		let secuenciaIdReserva = 0;
@@ -84,6 +86,20 @@ const SistemaReservas = (function () {
 
 		function obtenerReservas(numeroHabitacion) {
 			return reservasPorHabitacion.get(numeroHabitacion) || [];
+		}
+
+		function buscarReservaPorId(idReserva) {
+			for(const [numeroHabitacion, reservas] of reservasPorHabitacion.entries()) {
+				const index = reservas.findIndex((reserva) => reserva.id === idReserva);
+				if(index !== -1) {
+					return {
+						numeroHabitacion,
+						index,
+						reserva: reservas[index],
+					}
+				}
+			}
+			return null;
 		}
 
 		// métodos internos
@@ -291,6 +307,48 @@ const SistemaReservas = (function () {
 			};
 		}
 
+		function calcularTotal(idReserva) {
+			if(!Number.isInteger(idReserva)) {
+				return {
+					ok: false,
+					meta: { mensaje: "Entrada inválida" }
+				};
+			}
+
+			const encontrada = buscarReservaPorId(idReserva);
+			if(!encontrada) {
+				return {
+					ok: false,
+					meta: { mensaje: "Reserva no encontrada" }
+				};
+			}
+
+			const { numeroHabitacion, reserva } = encontrada;
+			
+			const precioHabitacion = habitacionesApi.obtenerPrecio(numeroHabitacion);
+			if(!precioHabitacion.ok) {
+				return precioHabitacion;
+			}
+			
+			const precioPorNoche = precioHabitacion.data.precioPorNoche;
+			const MS_POR_DIA = 1000 * 60 * 60 * 24;
+			
+			const noches = Math.round((reserva.fechaFin - reserva.fechaInicio) / MS_POR_DIA);
+			const precioTotal = precioPorNoche * noches;
+			
+			return {
+				ok: true,
+				data: {
+					idReserva,
+					numeroHabitacion,
+					noches,
+					precioTotal,
+				}
+			};
+			
+			
+		}
+
 		function listarReservasPorHabitacion(numeroHabitacion) {
 			if(!Number.isInteger(numeroHabitacion)) {
 				return {
@@ -316,11 +374,13 @@ const SistemaReservas = (function () {
 			crear,
 			cancelar,
 			modificar,
+			calcularTotal,
 			listarReservasPorHabitacion,
 			hayDisponibilidad,
 		};
-	})({ existe: habitaciones.existe, listarHabitaciones: habitaciones.listarHabitaciones });
+	})({ existe: habitaciones.existe, listarHabitaciones: habitaciones.listarHabitaciones, obtenerPrecio: habitaciones.obtenerPrecio });
 
+	// función de orquestación
 	function listarHabitacionesDisponibles(fechaInicio, fechaFin) {
 		if (!fechaInicio || !fechaFin || fechaInicio >= fechaFin) {
 			return {
@@ -443,3 +503,7 @@ console.log(resMod.ok === true);
 
 console.log("---------- ver lista de reservas de una habitación válida ----------");
 console.log(SistemaReservas.reservas.listarReservasPorHabitacion(reserva1.data.numeroHabitacion).data);
+
+console.log("---------- ver precio total reserva válida ----------");
+const resPrecioTotal = SistemaReservas.reservas.calcularTotal(reserva5.data.idReserva);
+console.log(resPrecioTotal.data);
