@@ -1,5 +1,4 @@
 const SistemaReservas = (function () {
-	// helper
 	function listarHabitacionesDisponibles(fechaInicio, fechaFin) {
 		const listaHabitaciones = habitaciones.listarHabitaciones();
 		const disponibles = [];
@@ -89,7 +88,8 @@ const SistemaReservas = (function () {
 	})();
 
 	const reservas = (function (habitacionesApi) {
-		const reservasPorHabitacion = new Map(); // numeroHabitacion -> [{cliente, fechaInicio, fechaFin}]
+		const reservasPorHabitacion = new Map(); // numeroHabitacion -> [{id, cliente, fechaInicio, fechaFin}]
+		let secuenciaIdReserva = 0;
 
 		// helpers
 		function esFechaValida(fecha) {
@@ -139,12 +139,12 @@ const SistemaReservas = (function () {
 				}
 			}
 
-			reservas.push({ cliente, fechaInicio, fechaFin });
+			reservas.push({ id: ++secuenciaIdReserva, cliente, fechaInicio, fechaFin });
 			reservasPorHabitacion.set(numeroHabitacion, reservas);
 
 			return {
 				ok: true,
-				data: { numeroHabitacion, reservas: [...reservas] },
+				data: { idReserva: secuenciaIdReserva, numeroHabitacion, fechaInicio, fechaFin },
 			};
 		}
 
@@ -159,7 +159,7 @@ const SistemaReservas = (function () {
 			if (!habitacionesApi.existe(numeroHabitacion)) {
 				return {
 					ok: false,
-					meta: { mensaje: "La habitación no existe" },
+					meta: { mensaje: "Habitación no encontrada" },
 				};
 			}
 
@@ -181,8 +181,53 @@ const SistemaReservas = (function () {
 			};
 		}
 
+		function cancelar(numeroHabitacion, idReserva) {
+			if(!Number.isInteger(numeroHabitacion) || !Number.isInteger(idReserva)) {
+				return {
+					ok: false,
+					meta: { mensaje: "Entrada inválida" }
+				};
+			}
+			
+			if(!habitacionesApi.existe(numeroHabitacion)) {
+				return {
+					ok: false,
+					meta: { mensaje: "Habitación no encontrada" }
+				};
+			}
+
+			const reservas = obtenerReservas(numeroHabitacion);
+
+			const index = reservas.findIndex((reserva) => reserva.id === idReserva);
+			if(index === -1) {
+				return {
+					ok: false,
+					meta: { mensaje: "Reserva no encontrada" }
+				};
+			}
+
+			const reserva = reservas[index];
+			
+			const ahora = Date.now();
+			const limiteCancelacion = reserva.fechaInicio.getTime() - 24 * 60 * 60 * 1000;
+			if(ahora >= limiteCancelacion) {
+				return {
+					ok: false,
+					meta: { mensaje: "Límite de cancelación excedido. No se pudo cancelar" }
+				};
+			}
+
+			reservas.splice(index, 1);
+			reservasPorHabitacion.set(numeroHabitacion, reservas);
+			return {
+				ok: true,
+				data: { idReserva }
+			}
+		}
+
 		return {
 			crear,
+			cancelar,
 			hayDisponibilidad,
 		};
 	})({ existe: habitaciones.existe, listarHabitaciones: habitaciones.listarHabitaciones });
@@ -255,3 +300,14 @@ const resListarDisponibles = SistemaReservas.listarHabitacionesDisponibles(
 );
 
 console.log(resListarDisponibles.data);
+
+console.log("---------- cancelar reserva válida ----------");
+const reserva4 = SistemaReservas.reservas.crear(
+	101,
+	"Jude",
+	new Date("2026-01-13"),
+	new Date("2026-01-20")
+);
+
+const resCancelar = SistemaReservas.reservas.cancelar(reserva4.data.numeroHabitacion, reserva4.data.idReserva)
+console.log(resCancelar.ok === true);
