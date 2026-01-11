@@ -344,9 +344,7 @@ const SistemaReservas = (function () {
 					noches,
 					precioTotal,
 				}
-			};
-			
-			
+			};	
 		}
 
 		function listarReservasPorHabitacion(numeroHabitacion) {
@@ -370,12 +368,45 @@ const SistemaReservas = (function () {
 			};
 		}
 
+		function obtenerReservasPorCliente(nombreCliente) {
+			if(typeof nombreCliente !== "string" || nombreCliente.trim() === "") {
+				return {
+					ok: false,
+					meta: { mensaje: "Entrada inválida" }
+				};
+			}
+			
+			const reservasCliente = [];
+
+			for(const [numeroHabitacion, reservas] of reservasPorHabitacion) {
+				for(const reserva of reservas) {
+					if(reserva.cliente === nombreCliente) {
+						reservasCliente.push({ numeroHabitacion, ...reserva });
+					}
+				}
+			}
+
+			if(reservasCliente.length === 0) {
+				return {
+					ok: true,
+					data: [],
+					meta: { mensaje: "El cliente no tiene reservas" }
+				};
+			}
+
+			return {
+				ok: true,
+				data: reservasCliente
+			};
+		}
+
 		return {
 			crear,
 			cancelar,
 			modificar,
 			calcularTotal,
 			listarReservasPorHabitacion,
+			obtenerReservasPorCliente,
 			hayDisponibilidad,
 		};
 	})({ existe: habitaciones.existe, listarHabitaciones: habitaciones.listarHabitaciones, obtenerPrecio: habitaciones.obtenerPrecio });
@@ -507,3 +538,14 @@ console.log(SistemaReservas.reservas.listarReservasPorHabitacion(reserva1.data.n
 console.log("---------- ver precio total reserva válida ----------");
 const resPrecioTotal = SistemaReservas.reservas.calcularTotal(reserva5.data.idReserva);
 console.log(resPrecioTotal.data);
+
+console.log("---------- ver reservas por cliente ----------");
+SistemaReservas.reservas.crear(
+	201,
+	"Jude",
+	new Date("2026-01-25"),
+	new Date("2026-01-28")
+);
+
+const resReservasCliente = SistemaReservas.reservas.obtenerReservasPorCliente("Jude");
+console.log(resReservasCliente.data);
