@@ -1,20 +1,6 @@
 const SistemaReservas = (function () {
-	function listarHabitacionesDisponibles(fechaInicio, fechaFin) {
-		const listaHabitaciones = habitaciones.listarHabitaciones();
-		const disponibles = [];
 
-		for (const habitacion of listaHabitaciones.data) {
-			const disponibilidad = reservas.hayDisponibilidad(habitacion.numero, fechaInicio, fechaFin);
-			if (disponibilidad.ok && disponibilidad.data) {
-				disponibles.push(habitacion);
-			}
-		}
-		return {
-			ok: true,
-			data: disponibles,
-		};
-	}
-
+	// ============ Submódulo: Habitaciones 
 	const habitaciones = (function () {
 		const habitacionesRegistradas = new Map();
 
@@ -334,6 +320,29 @@ const SistemaReservas = (function () {
 			hayDisponibilidad,
 		};
 	})({ existe: habitaciones.existe, listarHabitaciones: habitaciones.listarHabitaciones });
+
+	function listarHabitacionesDisponibles(fechaInicio, fechaFin) {
+		if (!fechaInicio || !fechaFin || fechaInicio >= fechaFin) {
+			return {
+				ok: false,
+				meta: { mensaje: "Rango de fechas inválido" },
+			};
+		}
+
+		const listaHabitaciones = habitaciones.listarHabitaciones();
+		const disponibles = [];
+
+		for (const habitacion of listaHabitaciones.data) {
+			const disponibilidad = reservas.hayDisponibilidad(habitacion.numero, fechaInicio, fechaFin);
+			if (disponibilidad.ok && disponibilidad.data) {
+				disponibles.push(habitacion);
+			}
+		}
+		return {
+			ok: true,
+			data: disponibles,
+		};
+	}
 
 	return {
 		habitaciones,
