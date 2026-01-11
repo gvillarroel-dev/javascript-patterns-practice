@@ -225,9 +225,31 @@ const SistemaReservas = (function () {
 			}
 		}
 
+		function listarReservasPorHabitacion(numeroHabitacion) {
+			if(!Number.isInteger(numeroHabitacion)) {
+				return {
+					ok: false,
+					meta: { mensaje: "Entrada inválida" }
+				};
+			}
+			
+			if(!habitacionesApi.existe(numeroHabitacion)) {
+				return {
+					ok: false,
+					meta: { mensaje: "Habitación no encontrada" }
+				};
+			}
+
+			return {
+				ok: true,
+				data: [...obtenerReservas(numeroHabitacion)]
+			};
+		}
+
 		return {
 			crear,
 			cancelar,
+			listarReservasPorHabitacion,
 			hayDisponibilidad,
 		};
 	})({ existe: habitaciones.existe, listarHabitaciones: habitaciones.listarHabitaciones });
@@ -311,3 +333,6 @@ const reserva4 = SistemaReservas.reservas.crear(
 
 const resCancelar = SistemaReservas.reservas.cancelar(reserva4.data.numeroHabitacion, reserva4.data.idReserva)
 console.log(resCancelar.ok === true);
+
+console.log("---------- ver lista de reservas de una habitación válida ----------");
+console.log(SistemaReservas.reservas.listarReservasPorHabitacion(reserva1.data.numeroHabitacion).data);
